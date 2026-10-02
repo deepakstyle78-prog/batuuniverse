@@ -1,24 +1,61 @@
-# Farm to Web
+name: Deploy to GitHub Pages
 
-https://bat.unuverse.workers.dev/ full ifarm bnao . GitHub pe website live karna hai
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-This project was built with [Lovable](https://lovable.dev).
+permissions:
+  pages: write
+  id-token: write
 
-## Build with Lovable
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/27f8715e-24a7-4035-8272-f8b8c71f5d74).
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Build static page
+        run: |
+          mkdir -p dist
+          cat > dist/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>BAT Vidyagram</title>
+            <meta name="description" content="BAT Vidyagram — full-screen embedded app." />
+            <style>
+              html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+              iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+            </style>
+          </head>
+          <body>
+            <iframe
+              src="https://bat.unuverse.workers.dev/"
+              title="BAT Vidyagram"
+              allow="accelerometer; autoplay; clipboard-read; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowfullscreen
+            ></iframe>
+          </body>
+          </html>
+          EOF
+          touch dist/.nojekyll
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
-## Development
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
